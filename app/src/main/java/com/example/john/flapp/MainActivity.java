@@ -1,12 +1,15 @@
 package com.example.john.flapp;
 
 import android.app.ProgressDialog;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ImageView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -19,17 +22,20 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 
 
 public class MainActivity extends ActionBarActivity {
     //private static final String API_KEY = "e191b08c93cdc17ab14f6c6937cdfb10";
     //private static final String API_SECRET = "5188aa164ef85c88";
-
+    Bitmap bitmap;
+    ImageView imgview;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         new loadPublicImages().execute();
+        imgview = (ImageView)findViewById(R.id.imgview);
     }
 
     @Override
@@ -55,29 +61,30 @@ public class MainActivity extends ActionBarActivity {
     }
 
 
-    private class loadPublicImages extends AsyncTask<String, Integer, JSONObject> {
+    private class loadPublicImages extends AsyncTask<String, Void, ArrayList<Bitmap>>{
         private ProgressDialog progressDialog;
-        private Integer PER_PAGE = 10;
         private static final String API_KEY = "e191b08c93cdc17ab14f6c6937cdfb10";
+        private static final String PUBLIC_ENDPOINT = "https://api.flickr.com/services/feeds/photos_public.gne?format=json";
+        HttpURLConnection connection;
+        ArrayList<Bitmap> bitmapList = new ArrayList<Bitmap>();
         //URL endpoint = new URL("https://api.flickr.com/services/feeds/photos_public.gne?format=json");
         //URL url = new URL("https://www.flickr.com/services/api/explore/flickr.photos.getRecent");
 
         @Override
-        protected JSONObject doInBackground(String... params) {
-            HttpURLConnection connection;
-            int status;
+        protected ArrayList<Bitmap> doInBackground(String... params) {
+            ArrayList<String> flickrPhotoUrls = new ArrayList<String>();
+
             try {
                 /*URL url = new URL("https://www.flickr.com/services/api/explore/flickr.photos.getRecent&api_key="
                                     + API_KEY
                                     +"&per_page=" + PER_PAGE
                                     + "&format=json"
                                     );*/
+
                 // Connect to public photos endpoint
-                URL url = new URL("https://api.flickr.com/services/feeds/photos_public.gne?format=json");
+                URL url = new URL(PUBLIC_ENDPOINT);
                 connection = (HttpURLConnection) url.openConnection();
                 connection.connect();
-                status = connection.getResponseCode();
-                Log.d("connection", "status " + status);
 
                 // Read in endpoint response
                 InputStream in = connection.getInputStream();
@@ -88,12 +95,13 @@ public class MainActivity extends ActionBarActivity {
                 while((line = reader.readLine()) != null ) {
                     if(counter > START_LINE) {
                         sb = sb.append(line);
-                        Log.d("connection", "line: " + line);
+                        //Log.d("connection", "line: " + line);
                     }
                     counter++;
                 }
-
                 String publicPhotoData = "{" + sb.toString() + "}";
+
+                // Create FlickrPublicPhoto object and grab the imageUrl
                 try {
                     JSONObject jsonPhotoData = new JSONObject(publicPhotoData);
                     FlickrPublicPhoto flickrPublicphoto = new FlickrPublicPhoto(jsonPhotoData);
@@ -101,24 +109,44 @@ public class MainActivity extends ActionBarActivity {
                     for(int i = 0; i < jsonArray.length(); i++) {
                         JSONObject photo = (JSONObject) jsonArray.get(i);
                         FlickrPublicPhoto flickrPhoto = new FlickrPublicPhoto(photo);
-                        Log.d("connection", "FlickrPublicPhoto: " + flickrPhoto.getImageUrl());
+                        flickrPhotoUrls.add(flickrPhoto.getImageUrl());
+                        //Log.d("connection", "FlickrPublicPhoto: " + flickrPhoto.getImageUrl());
                     }
                 } catch (JSONException e) {
                     Log.d("connection", "JSONException main: " + e);
                 }
 
+                // Get bitmap
+                try {
+                    for(int i = 0; i < flickrPhotoUrls.size(); i++) {
+                        Log.d("connection", flickrPhotoUrls.get(i));
+                        URL imgUrl = new URL(flickrPhotoUrls.get(i));
+                        bitmap = BitmapFactory.decodeStream(imgUrl.openStream());
+                        bitmapList.add(bitmap);
+                    }
+                } catch (Exception e) {
+                    Log.d("connection", "Exception: " + e);
+                }
             } catch(MalformedURLException e) {
                 System.err.println("Bad URL: " + e);
             } catch(IOException e) {
                 System.err.println("IO Exception " + e);
             }
-        return null;
+        return bitmapList;
         }
 
         protected void onPreExecute() {
             super.onPreExecute();
             progressDialog = new ProgressDialog(MainActivity.this);
-            progressDialog.setMessage("Loading images from Flickr");
+            progressDialog.setMessage("Loading public images from Flickr");
+            progressDialog.show();
+        }
+
+        protected void onPostExecute(ArrayList<Bitmap> bmpList) {
+            progressDialog.dismiss();
+            Log.d("connection", "bmp" + bmpList.toString());
+            imgview.setImageBitmap(bmpList.get(0));
+            super.onPostExecute(bmpList);
         }
 
     }

@@ -4,7 +4,10 @@
     android:layout_height="fill_parent"
     android:orientation="vertical"
     tools:context=".MainActivity">
-
+    <ImageView
+        android:id="@+id/imgview"
+        android:layout_width="150dp"
+        android:layout_height="150dp" />
     <GridView
         android:id="@+id/gridView" android:numColumns="auto_fit" android:gravity="center"
         android:layout_width="wrap_content"
