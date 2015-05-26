@@ -8,6 +8,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -18,7 +19,6 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
 
 
 public class MainActivity extends ActionBarActivity {
@@ -53,6 +53,7 @@ public class MainActivity extends ActionBarActivity {
 
         return super.onOptionsItemSelected(item);
     }
+
 
     private class loadPublicImages extends AsyncTask<String, Integer, JSONObject> {
         private ProgressDialog progressDialog;
@@ -95,25 +96,17 @@ public class MainActivity extends ActionBarActivity {
                 String publicPhotoData = "{" + sb.toString() + "}";
                 try {
                     JSONObject jsonPhotoData = new JSONObject(publicPhotoData);
-                    FlickrPublic flickrPublic = new FlickrPublic(jsonPhotoData);
-                    ArrayList<FlickrPublic> photoArray = flickrPublic.FlickrPhotos(publicPhotoData);
-                    for(int i=0; i< photoArray.size(); ++i) {
-                        Log.d("connection", "array: " + photoArray.get(i));
+                    FlickrPublicPhoto flickrPublicphoto = new FlickrPublicPhoto(jsonPhotoData);
+                    JSONArray jsonArray = jsonPhotoData.optJSONArray("items");
+                    for(int i = 0; i < jsonArray.length(); i++) {
+                        JSONObject photo = (JSONObject) jsonArray.get(i);
+                        FlickrPublicPhoto flickrPhoto = new FlickrPublicPhoto(photo);
+                        Log.d("connection", "FlickrPublicPhoto: " + flickrPhoto.getImageUrl());
                     }
                 } catch (JSONException e) {
                     Log.d("connection", "JSONException main: " + e);
                 }
-                /*
-                try {
-                    JSONObject jsonPublic = new JSONObject("{ " +publicPhotoData+ "}");
-                    JSONArray photoArray = jsonPublic.optJSONArray("items");
-                    for(int i = 0; i < photoArray.length(); i++) {
-                        JSONObject photo = (JSONObject) photoArray.get(i);
-                        Log.d("connection", photo.optString("title"));
-                    }
-                } catch (JSONException e) {
-                    Log.d("connection", "JSONException: " + e);
-                } */
+
             } catch(MalformedURLException e) {
                 System.err.println("Bad URL: " + e);
             } catch(IOException e) {
