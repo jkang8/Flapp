@@ -191,7 +191,7 @@ public class MainActivity extends ActionBarActivity {
             ImageView imageView;
             if(convertView == null) {
                 imageView = new ImageView(context);
-                imageView.setLayoutParams(new GridView.LayoutParams(350, 350));
+                imageView.setLayoutParams(new GridView.LayoutParams(345, 345));
                 imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
                 imageView.setPadding(2, 2, 2, 2);
             } else {
