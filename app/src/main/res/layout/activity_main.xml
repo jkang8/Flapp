@@ -4,15 +4,15 @@
     android:layout_height="fill_parent"
     android:orientation="vertical"
     tools:context=".MainActivity">
-    <ImageView
-        android:id="@+id/imgview"
-        android:layout_width="150dp"
-        android:layout_height="150dp" />
     <GridView
-        android:id="@+id/gridView" android:numColumns="auto_fit" android:gravity="center"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:stretchMode="columnWidth"/>
+        android:id="@+id/gridView"
+        android:numColumns="3"
+        android:gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:columnWidth="90dp"
+        android:stretchMode="columnWidth"
+        android:verticalSpacing="3dp"/>
 
 
 </LinearLayout>

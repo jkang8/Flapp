@@ -1,6 +1,7 @@
 package com.example.john.flapp;
 
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
@@ -9,6 +10,10 @@ import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.BaseAdapter;
+import android.widget.GridView;
 import android.widget.ImageView;
 
 import org.json.JSONArray;
@@ -29,13 +34,14 @@ public class MainActivity extends ActionBarActivity {
     //private static final String API_KEY = "e191b08c93cdc17ab14f6c6937cdfb10";
     //private static final String API_SECRET = "5188aa164ef85c88";
     Bitmap bitmap;
-    ImageView imgview;
+    GridView gridView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         new loadPublicImages().execute();
-        imgview = (ImageView)findViewById(R.id.imgview);
+        gridView = (GridView) findViewById(R.id.gridView);
     }
 
     @Override
@@ -145,9 +151,54 @@ public class MainActivity extends ActionBarActivity {
         protected void onPostExecute(ArrayList<Bitmap> bmpList) {
             progressDialog.dismiss();
             Log.d("connection", "bmp" + bmpList.toString());
-            imgview.setImageBitmap(bmpList.get(0));
+            gridView = (GridView) findViewById(R.id.gridView);
+            gridView.setAdapter(new ImageAdapter(MainActivity.this, android.R.layout.simple_list_item_1, bmpList));
             super.onPostExecute(bmpList);
         }
 
+    }
+
+    class ImageAdapter extends BaseAdapter {
+
+        private Context context;
+        private int r;
+        private ArrayList<Bitmap> bmpList;
+
+        public ImageAdapter(Context c, int r, ArrayList<Bitmap> a) {
+            this.context = c;
+            this.r = r;
+            this.bmpList = a;
+            Log.d("connection", "ImgAdapter created");
+        }
+
+        @Override
+        public int getCount() {
+            return bmpList.size();
+        }
+
+        @Override
+        public Object getItem(int position) {
+            return null;
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return 0;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            ImageView imageView;
+            if(convertView == null) {
+                imageView = new ImageView(context);
+                imageView.setLayoutParams(new GridView.LayoutParams(350, 350));
+                imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                imageView.setPadding(2, 2, 2, 2);
+            } else {
+                imageView = (ImageView) convertView;
+            }
+            imageView.setImageBitmap(bmpList.get(position));
+            return imageView;
+        }
     }
 }
