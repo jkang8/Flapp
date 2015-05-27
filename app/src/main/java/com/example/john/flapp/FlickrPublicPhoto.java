@@ -1,5 +1,7 @@
 package com.example.john.flapp;
 
+import android.graphics.Bitmap;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -13,6 +15,7 @@ public class FlickrPublicPhoto extends Object {
     String media;
     String author;
     String imageUrl;
+    Bitmap bitmap;
 
     public FlickrPublicPhoto(JSONObject jsonPhoto) throws JSONException {
         this.title = (String) jsonPhoto.optString("title");
@@ -26,6 +29,13 @@ public class FlickrPublicPhoto extends Object {
         JSONObject media = new JSONObject(this.media);
         String imageUrl = media.optString("m");
         return imageUrl;
+    }
+
+    public void setBitmap(Bitmap bitmap) {
+        this.bitmap = bitmap;
+    }
+    public Bitmap getBitmap() {
+        return this.bitmap;
     }
 
 }

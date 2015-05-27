@@ -1,7 +1,7 @@
 package com.example.john.flapp;
 
 import android.app.ProgressDialog;
-import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
@@ -11,10 +11,8 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.BaseAdapter;
+import android.widget.AdapterView;
 import android.widget.GridView;
-import android.widget.ImageView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -35,13 +33,33 @@ public class MainActivity extends ActionBarActivity {
     //private static final String API_SECRET = "5188aa164ef85c88";
     Bitmap bitmap;
     GridView gridView;
+    ArrayList<FlickrPublicPhoto> flickrPhotoList = new ArrayList<FlickrPublicPhoto>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         new loadPublicImages().execute();
+
+        // Individual grid click to fullscreen
         gridView = (GridView) findViewById(R.id.gridView);
+        gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    Intent intent = new Intent(getApplicationContext(), FullscreenActivity.class);
+                    String url = "";
+                    try {
+                        url = flickrPhotoList.get(position).getImageUrl();
+                    } catch (JSONException e) {
+                        System.err.println(e);
+                    }
+
+                    String pos = String.valueOf(position);
+                    Log.d("ITEMCLICK", url);
+                    intent.putExtra("url", url);
+                    startActivity(intent);
+            }
+        });
     }
 
     @Override
@@ -67,26 +85,18 @@ public class MainActivity extends ActionBarActivity {
     }
 
 
-    private class loadPublicImages extends AsyncTask<String, Void, ArrayList<Bitmap>>{
+    private class loadPublicImages extends AsyncTask<String, Void, ArrayList<FlickrPublicPhoto>>{
         private ProgressDialog progressDialog;
         private static final String API_KEY = "e191b08c93cdc17ab14f6c6937cdfb10";
         private static final String PUBLIC_ENDPOINT = "https://api.flickr.com/services/feeds/photos_public.gne?format=json";
         HttpURLConnection connection;
-        ArrayList<Bitmap> bitmapList = new ArrayList<Bitmap>();
-        //URL endpoint = new URL("https://api.flickr.com/services/feeds/photos_public.gne?format=json");
-        //URL url = new URL("https://www.flickr.com/services/api/explore/flickr.photos.getRecent");
+        //ArrayList<Bitmap> bitmapList = new ArrayList<Bitmap>();
+        ArrayList<String> flickrPhotoUrls = new ArrayList<String>();
 
         @Override
-        protected ArrayList<Bitmap> doInBackground(String... params) {
-            ArrayList<String> flickrPhotoUrls = new ArrayList<String>();
+        protected ArrayList<FlickrPublicPhoto> doInBackground(String... params) {
 
             try {
-                /*URL url = new URL("https://www.flickr.com/services/api/explore/flickr.photos.getRecent&api_key="
-                                    + API_KEY
-                                    +"&per_page=" + PER_PAGE
-                                    + "&format=json"
-                                    );*/
-
                 // Connect to public photos endpoint
                 URL url = new URL(PUBLIC_ENDPOINT);
                 connection = (HttpURLConnection) url.openConnection();
@@ -101,7 +111,6 @@ public class MainActivity extends ActionBarActivity {
                 while((line = reader.readLine()) != null ) {
                     if(counter > START_LINE) {
                         sb = sb.append(line);
-                        //Log.d("connection", "line: " + line);
                     }
                     counter++;
                 }
@@ -116,7 +125,8 @@ public class MainActivity extends ActionBarActivity {
                         JSONObject photo = (JSONObject) jsonArray.get(i);
                         FlickrPublicPhoto flickrPhoto = new FlickrPublicPhoto(photo);
                         flickrPhotoUrls.add(flickrPhoto.getImageUrl());
-                        //Log.d("connection", "FlickrPublicPhoto: " + flickrPhoto.getImageUrl());
+                        flickrPhotoList.add(flickrPhoto);
+                        Log.d("connection", "FlickrPublicPhoto: " + flickrPhoto.getImageUrl());
                     }
                 } catch (JSONException e) {
                     Log.d("connection", "JSONException main: " + e);
@@ -124,21 +134,23 @@ public class MainActivity extends ActionBarActivity {
 
                 // Get bitmap
                 try {
-                    for(int i = 0; i < flickrPhotoUrls.size(); i++) {
+                    for(int i = 0; i < flickrPhotoList.size(); i++) {
                         Log.d("connection", flickrPhotoUrls.get(i));
-                        URL imgUrl = new URL(flickrPhotoUrls.get(i));
+                        URL imgUrl = new URL(flickrPhotoList.get(i).getImageUrl());
                         bitmap = BitmapFactory.decodeStream(imgUrl.openStream());
-                        bitmapList.add(bitmap);
+                        //bitmapList.add(bitmap);
+                        flickrPhotoList.get(i).setBitmap(bitmap);
                     }
                 } catch (Exception e) {
                     Log.d("connection", "Exception: " + e);
                 }
+                connection.disconnect();
             } catch(MalformedURLException e) {
                 System.err.println("Bad URL: " + e);
             } catch(IOException e) {
                 System.err.println("IO Exception " + e);
             }
-        return bitmapList;
+        return flickrPhotoList;
         }
 
         protected void onPreExecute() {
@@ -148,57 +160,12 @@ public class MainActivity extends ActionBarActivity {
             progressDialog.show();
         }
 
-        protected void onPostExecute(ArrayList<Bitmap> bmpList) {
+        protected void onPostExecute(ArrayList<FlickrPublicPhoto> flickrPhotoList) {
             progressDialog.dismiss();
-            Log.d("connection", "bmp" + bmpList.toString());
             gridView = (GridView) findViewById(R.id.gridView);
-            gridView.setAdapter(new ImageAdapter(MainActivity.this, android.R.layout.simple_list_item_1, bmpList));
-            super.onPostExecute(bmpList);
+            gridView.setAdapter(new ImageAdapter(MainActivity.this, android.R.layout.simple_list_item_1, flickrPhotoList));
+            super.onPostExecute(flickrPhotoList);
         }
 
-    }
-
-    class ImageAdapter extends BaseAdapter {
-
-        private Context context;
-        private int r;
-        private ArrayList<Bitmap> bmpList;
-
-        public ImageAdapter(Context c, int r, ArrayList<Bitmap> a) {
-            this.context = c;
-            this.r = r;
-            this.bmpList = a;
-            Log.d("connection", "ImgAdapter created");
-        }
-
-        @Override
-        public int getCount() {
-            return bmpList.size();
-        }
-
-        @Override
-        public Object getItem(int position) {
-            return null;
-        }
-
-        @Override
-        public long getItemId(int position) {
-            return 0;
-        }
-
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            ImageView imageView;
-            if(convertView == null) {
-                imageView = new ImageView(context);
-                imageView.setLayoutParams(new GridView.LayoutParams(345, 345));
-                imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
-                imageView.setPadding(2, 2, 2, 2);
-            } else {
-                imageView = (ImageView) convertView;
-            }
-            imageView.setImageBitmap(bmpList.get(position));
-            return imageView;
-        }
     }
 }
