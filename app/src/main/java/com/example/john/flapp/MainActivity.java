@@ -79,9 +79,9 @@ public class MainActivity extends ActionBarActivity {
         gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Log.d("ONITEMCLICK", "LOL");
-                Log.d("ONITEMCLICK", flickrPhotoList.get(position).title);
-                Bitmap bmp = flickrPhotoList.get(position).getBitmap();
+                // Convert bitmap into byte array and send it to fullscreen activity
+                FlickrPublicPhoto photo = flickrPhotoList.get(position);
+                Bitmap bmp = photo.getBitmap();
                 ByteArrayOutputStream os = new ByteArrayOutputStream();
                 bmp.compress(Bitmap.CompressFormat.JPEG, 100, os);
                 byte[] byteArray = os.toByteArray();
