@@ -2,15 +2,12 @@ package com.example.john.flapp;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.ImageView;
 
 import com.example.john.flapp.util.SystemUiHider;
-
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
 
 
 /**
@@ -54,11 +51,13 @@ public class FullscreenActivity extends Activity {
         setContentView(R.layout.activity_fullscreen);
         //ArrayList<Bitmap> bmpList = new ArrayList<Bitmap>();
         Intent intent = getIntent();
-        String url = intent.getExtras().getString("url");
-        Log.d("url", url);
         ImageView imageView = (ImageView)findViewById(R.id.fullscreen);
+        Bundle extras = getIntent().getExtras();
+        byte[] byteArray = extras.getByteArray("image");
+        Bitmap bmp = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
+        imageView.setImageBitmap(bmp);
 
-        try {
+        /*try {
             URL imgUrl = new URL(url);
             HttpURLConnection conn = (HttpURLConnection) imgUrl.openConnection();
             //conn.setDoInput(true);
@@ -69,7 +68,7 @@ public class FullscreenActivity extends Activity {
             //imageView.setImageBitmap(bitmap);
         } catch(IOException e) {
             System.err.println(e);
-        }
+        } */
 
         //bitmapList.add(bitmap);
 
