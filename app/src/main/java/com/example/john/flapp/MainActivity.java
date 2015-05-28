@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -33,11 +34,40 @@ public class MainActivity extends ActionBarActivity {
     //private static final String API_SECRET = "5188aa164ef85c88";
     Bitmap bitmap;
     GridView gridView;
+    mSwipeRefreshLayout swipeContainer;
     ArrayList<FlickrPublicPhoto> flickrPhotoList = new ArrayList<FlickrPublicPhoto>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        loadActivity();
+
+        swipeContainer = (mSwipeRefreshLayout) findViewById(R.id.swipeContainer);
+        // Setup refresh listener which triggers new data loading
+        swipeContainer.setOnChildScrollUpListener(new mSwipeRefreshLayout.OnChildScrollUpListener() {
+            @Override
+            public boolean canChildScrollUp() {
+                return gridView.getFirstVisiblePosition() > 0 ||
+                        gridView.getChildAt(0) == null ||
+                        gridView.getChildAt(0).getTop() < 0;
+            }
+        });
+        // Setup refresh listener which triggers new data loading
+        swipeContainer.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                finish();
+                startActivity(getIntent());
+                loadActivity();
+                if(swipeContainer.isRefreshing()) {
+                    swipeContainer.setRefreshing(false);
+                }
+            }
+        });
+
+    }
+
+    private void loadActivity() {
         setContentView(R.layout.activity_main);
         new loadPublicImages().execute();
 
@@ -46,21 +76,22 @@ public class MainActivity extends ActionBarActivity {
         gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    Intent intent = new Intent(getApplicationContext(), FullscreenActivity.class);
-                    String url = "";
-                    try {
-                        url = flickrPhotoList.get(position).getImageUrl();
-                    } catch (JSONException e) {
-                        System.err.println(e);
-                    }
+                Intent intent = new Intent(getApplicationContext(), FullscreenActivity.class);
+                String url = "";
+                try {
+                    url = flickrPhotoList.get(position).getImageUrl();
+                } catch (JSONException e) {
+                    System.err.println(e);
+                }
 
-                    String pos = String.valueOf(position);
-                    Log.d("ITEMCLICK", url);
-                    intent.putExtra("url", url);
-                    startActivity(intent);
+                String pos = String.valueOf(position);
+                Log.d("ITEMCLICK", url);
+                intent.putExtra("url", url);
+                startActivity(intent);
             }
         });
     }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -134,7 +165,7 @@ public class MainActivity extends ActionBarActivity {
 
                 // Get bitmap
                 try {
-                    for(int i = 0; i < flickrPhotoList.size(); i++) {
+                    for(int i = 0; i <= flickrPhotoList.size()+1; i++) {
                         Log.d("connection", flickrPhotoUrls.get(i));
                         URL imgUrl = new URL(flickrPhotoList.get(i).getImageUrl());
                         bitmap = BitmapFactory.decodeStream(imgUrl.openStream());
@@ -156,14 +187,16 @@ public class MainActivity extends ActionBarActivity {
         protected void onPreExecute() {
             super.onPreExecute();
             progressDialog = new ProgressDialog(MainActivity.this);
-            progressDialog.setMessage("Loading public images from Flickr");
+            progressDialog.setMessage("Loading images from Flickr");
             progressDialog.show();
         }
 
         protected void onPostExecute(ArrayList<FlickrPublicPhoto> flickrPhotoList) {
-            progressDialog.dismiss();
             gridView = (GridView) findViewById(R.id.gridView);
+            //gridView.setAdapter(null);
             gridView.setAdapter(new ImageAdapter(MainActivity.this, android.R.layout.simple_list_item_1, flickrPhotoList));
+            progressDialog.dismiss();
+
             super.onPostExecute(flickrPhotoList);
         }
 
